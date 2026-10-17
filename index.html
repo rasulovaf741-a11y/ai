@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0c0f">
+  <title>  Yordamchi AI</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090a0d;
+      --panel: #101116;
+      --panel-soft: #15161c;
+      --line: rgba(255, 157, 66, .2);
+      --orange: #ff9b42;
+      --orange-bright: #ffb15f;
+      --text: #f5f5f7;
+      --muted: #9698a3;
+      --danger: #ff7777;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 50% -20%, rgba(255, 142, 51, .11), transparent 48%),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, textarea { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+
+    .app {
+      position: relative;
+      width: min(100%, 1180px);
+      height: 100dvh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      border-inline: 1px solid rgba(255,255,255,.035);
+      background: rgba(9,10,13,.76);
+    }
+
+    .topbar {
+      height: 76px;
+      flex: 0 0 76px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 0 28px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      background: rgba(12,13,17,.86);
+      backdrop-filter: blur(18px);
+      z-index: 5;
+    }
+    .icon-button {
+      display: grid;
+      place-items: center;
+      width: 43px;
+      height: 43px;
+      padding: 0;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      color: #f4f4f5;
+      background: #17181e;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .icon-button:hover {
+      background: #242127;
+      border-color: rgba(255,155,66,.55);
+      transform: translateY(-1px);
+    }
+    .hamburger { display: flex; flex-direction: column; gap: 5px; }
+    .hamburger span { display: block; width: 17px; height: 2px; border-radius: 5px; background: currentColor; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 43px;
+      height: 43px;
+      border-radius: 14px;
+      color: #17100a;
+      background: linear-gradient(145deg, #ffc27e, #ff8a2b);
+      box-shadow: 0 5px 22px rgba(255,139,43,.2);
+      font-size: 22px;
+    }
+    .brand-copy { min-width: 0; }
+    .brand-copy h1 { margin: 0; font-size: 17px; letter-spacing: -.35px; font-weight: 750; }
+    .brand-copy p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .status {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 999px;
+      color: #b9bac3;
+      background: rgba(255,255,255,.025);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #54d99a; box-shadow: 0 0 10px rgba(84,217,154,.5); }
+
+    .chat-shell {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: min(100% - 64px, 790px);
+      min-height: 0;
+      flex: 1;
+      margin: 22px auto 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255,155,66,.55);
+      border-radius: 23px;
+      background: linear-gradient(180deg, rgba(20,20,25,.97), rgba(13,14,18,.98));
+      box-shadow: 0 0 0 1px rgba(255,155,66,.045), 0 18px 70px rgba(0,0,0,.28), 0 0 42px rgba(255,135,40,.045);
+    }
+    .chat-heading {
+      min-height: 57px;
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      color: #c7c7cf;
+      font-size: 12px;
+    }
+    .chat-heading strong { color: #f1f1f4; font-weight: 650; }
+    .secure-note { color: #8e909a; font-size: 11px; }
+
+    #chat {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 28px clamp(16px, 4vw, 38px) 24px;
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+      scrollbar-color: #454047 transparent;
+    }
+    #chat::-webkit-scrollbar { width: 7px; }
+    #chat::-webkit-scrollbar-thumb { border-radius: 9px; background: #454047; }
+
+    .welcome {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 10px 45px;
+      text-align: center;
+      animation: appear .45s ease both;
+    }
+    .welcome-icon {
+      display: grid;
+      place-items: center;
+      width: 86px;
+      height: 68px;
+      margin-bottom: 22px;
+      border: 1px solid rgba(255,166,83,.35);
+      border-radius: 85px;
+      color: #ffb365;
+      background: radial-gradient(circle at 30% 20%, rgba(255,180,101,.19), rgba(255,137,44,.045));
+      box-shadow: 0 0 48px rgba(255,137,44,.09);
+      font-size: 34px;
+    }
+
+.helo-patrik{
+       display: grid;
+      place-items: center;
+      width: 36px;
+      height: 29px;
+      margin-bottom: 22px;
+      border: 1px solid rgba(255,166,83,.35);
+      border-radius: 85px;
+      color: #ffb365;
+      background: radial-gradient(circle at 30% 20%, rgba(255,180,101,.19), rgba(255,137,44,.045));
+      box-shadow: 0 0 48px rgba(255,137,44,.09);
+      font-size: 34px;
+}
+
+    .welcome h2 { margin: 0 0 10px; font-size: clamp(23px, 3vw, 31px); letter-spacing: -.8px; }
+    .welcome p { max-width: 380px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .suggestions { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin-top: 25px; }
+    .suggestion {
+      padding: 10px 13px;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 12px;
+      color: #d5d5dc;
+      background: rgba(255,255,255,.035);
+      font-size: 12px;
+      cursor: pointer;
+      transition: .2s;
+    }
+    .suggestion:hover { border-color: rgba(255,155,66,.5); background: rgba(255,155,66,.07); color: #fff; }
+
+    .message-row { display: flex; flex-direction: column; margin: 0 0 20px; animation: appear .22s ease both; }
+    .message-row.user-row { align-items: flex-end; }
+    .message-label { margin: 0 0 7px 3px; color: #9a9ba5; font-size: 11px; }
+    .message {
+      max-width: min(84%, 580px);
+      padding: 13px 16px;
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 17px;
+      color: #ededf1;
+      background: #1b1c23;
+      line-height: 1.7;
+      font-size: 14px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .user-row .message {
+      border-color: rgba(255,155,66,.24);
+      border-bottom-right-radius: 5px;
+      color: #fff7ef;
+      background: linear-gradient(135deg, #8f4e22, #6d391d);
+    }
+    .assistant-row .message { border-bottom-left-radius: 5px; }
+    .assistant-row .message.loading { color: #bcbcc5; }
+    .assistant-row .message.loading::after { content: " "; display: inline-block; width: 5px; height: 5px; margin-left: 5px; border-radius: 50%; background: var(--orange); animation: pulse 1s infinite; }
+    .message.error { color: #ffb6b6; border-color: rgba(255,100,100,.2); background: rgba(120,30,35,.23); }
+
+    .composer-wrap { padding: 14px clamp(12px, 3vw, 28px) 18px; border-top: 1px solid rgba(255,255,255,.055); background: rgba(11,12,16,.78); }
+    #form {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      padding: 8px 8px 8px 15px;
+      border: 1px solid rgba(255,155,66,.35);
+      border-radius: 17px;
+      background: #111218;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    #form:focus-within { border-color: rgba(255,155,66,.8); box-shadow: 0 0 0 3px rgba(255,155,66,.07); }
+    #input {
+      flex: 1;
+      min-width: 0;
+      min-height: 43px;
+      max-height: 150px;
+      padding: 12px 0 8px;
+      resize: none;
+      border: 0;
+      outline: 0;
+      color: #f5f5f7;
+      background: transparent;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    #input::placeholder { color: #777984; }
+    #sendBtn {
+      min-width: 45px;
+      height: 43px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 15px;
+      border: 0;
+      border-radius: 12px;
+      color: #211309;
+      background: linear-gradient(135deg, #ffc078, #ff922f);
+      box-shadow: 0 4px 16px rgba(255,145,47,.17);
+      font-size: 13px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform .2s, filter .2s;
+    }
+    #sendBtn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    #sendBtn:disabled { cursor: wait; opacity: .6; transform: none; }
+    .composer-hint { margin: 10px 0 0; color: #737580; text-align: center; font-size: 10px; }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: rgba(0,0,0,.65);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .25s, visibility .25s;
+      backdrop-filter: blur(3px);
+    }
+    .overlay.open { opacity: 1; visibility: visible; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 25;
+      width: min(350px, 88vw);
+      padding: 25px 20px;
+      border-right: 1px solid rgba(255,155,66,.3);
+      background: #101116;
+      box-shadow: 24px 0 80px rgba(0,0,0,.4);
+      transform: translateX(-105%);
+      transition: transform .28s cubic-bezier(.2,.8,.2,1);
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-top { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
+    .sidebar-logo { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 14px; color: #201207; background: linear-gradient(145deg,#ffc27e,#ff8a2b); font-size: 21px; }
+    .sidebar-title { flex: 1; font-weight: 750; font-size: 16px; }
+    .sidebar-subtitle { margin-top: 4px; color: var(--muted); font-size: 11px; font-weight: 400; }
+    .close-btn { font-size: 22px; }
+    .sidebar-button {
+      width: 100%;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      padding: 0 15px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 13px;
+      color: #eeeeF2;
+      background: #181920;
+      text-align: left;
+      font-size: 13px;
+      cursor: pointer;
+      transition: .2s;
+    }
+    .sidebar-button:hover { border-color: rgba(255,155,66,.45); background: #211c1a; }
+    .sidebar-button .side-icon { width: 23px; color: var(--orange-bright); text-align: center; font-size: 17px; }
+    .sidebar-divider { height: 1px; margin: 15px 0 18px; background: rgba(255,255,255,.07); }
+    .sidebar-caption { color: #737580; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; }
+    .sidebar-footer { margin-top: auto; padding: 15px; border: 1px solid rgba(255,255,255,.06); border-radius: 14px; color: #898b95; background: rgba(255,255,255,.025); font-size: 11px; line-height: 1.6; }
+    .sidebar-footer strong { color: #d7d7de; }
+
+    @keyframes appear { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+
+    @media (max-width: 650px) {
+      .topbar { height: 67px; flex-basis: 67px; padding: 0 13px; gap: 10px; }
+      .icon-button { width: 40px; height: 40px; border-radius: 12px; }
+      .brand-mark { width: 39px; height: 39px; border-radius: 12px; font-size: 20px; }
+      .brand-copy h1 { font-size: 15px; }
+      .brand-copy p { max-width: 185px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+      .status { padding: 7px 9px; font-size: 10px; gap: 6px; }
+      .chat-shell { width: calc(100% - 20px); margin: 10px auto; border-radius: 18px; }
+      .chat-heading { min-height: 47px; padding: 0 14px; }
+      .secure-note { display: none; }
+      #chat { padding: 20px 13px; }
+      .welcome-icon { width: 65px; height: 65px; border-radius: 21px; font-size: 29px; margin-bottom: 17px; }
+      .welcome p { font-size: 13px; }
+      .message { max-width: 92%; padding: 11px 13px; font-size: 13px; }
+      .composer-wrap { padding: 10px 10px 12px; }
+      #form { gap: 6px; padding-left: 11px; border-radius: 14px; }
+      #input { font-size: 13px; }
+      #sendBtn { width: 43px; min-width: 43px; padding: 0; font-size: 0; border-radius: 11px; }
+      #sendBtn .send-arrow { font-size: 20px; }
+      .composer-hint { font-size: 9px; }
+      .suggestions { gap: 7px; }
+      .suggestion { font-size: 11px; padding: 9px 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="icon-button hamburger" id="burgerBtn" type="button" aria-label="Menyuni ochish" aria-controls="sidebar" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="helo-patrik" aria-hidden="true"><img  class="helo-patrik" src="./img/logo.png" alt="" width="20"></div>
+      <div class="brand-copy">
+        <h1>Yordamchi AI</h1>
+        <p>Savollaringizga aqlli yordamchi</p>
+      </div>
+      <div class="status"><span class="status-dot"></span> Tayyor</div>
+    </header>
+
+    <aside class="sidebar" id="sidebar" aria-hidden="true">
+      <div class="sidebar-top">
+        <div class="sidebar-logo">✦</div>
+        <div class="sidebar-title">Yordamchi AI<div class="sidebar-subtitle">Shaxsiy AI yordamchingiz</div></div>
+        <button class="icon-button close-btn" id="closeBtn" type="button" aria-label="Menyuni yopish">×</button>
+      </div>
+      <button class="sidebar-button" id="newChatBtn" type="button"><span class="side-icon">＋</span> Yangi chat</button>
+      <button class="sidebar-button" id="clearBtn" type="button"><span class="side-icon">⌫</span> Suhbatni tozalash</button>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-caption">Yordamchi</div>
+      <div class="sidebar-footer"><strong>Yordamchi AI</strong><br>G‘oyalaringiz, savollaringiz va kundalik vazifalaringiz uchun.</div>
+    </aside>
+    <div class="overlay" id="overlay"></div>
+
+    <main class="chat-shell">
+      <div class="chat-heading"><strong>✦ &nbsp; Suhbat</strong><span class="secure-note">Xabaringizni yozib, suhbatni boshlang</span></div>
+      <section id="chat" aria-live="polite" aria-label="Chat xabarlari">
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon"><img  class="welcome-icon" src="./img/logo.png" alt="" width="100"></div>
+          <h2>Salom! Qanday yordam beray?</h2>
+          <p>Men sizning AI yordamchingizman. Savolingizni yozing — birgalikda yechim topamiz.</p>
+          <div class="suggestions">
+            <button class="suggestion" type="button" data-prompt="Menga yangi loyiha g‘oyasini taklif qil"> <img src="./img/ide.png" alt="" width="20"> Loyiha g‘oyasi</button>
+            <button class="suggestion" type="button" data-prompt="HTML, CSS va JavaScriptni o‘rganish rejasini tuzib ber"> <img src="./img/dasturchi.png" alt="" width="10"> Dasturlash</button>
+            <button class="suggestion" type="button" data-prompt="Bugun nimalarni o‘rganishim mumkin?">📚 O‘rganish</button>
+          </div>
+        </div>
+      </section>
+      <div class="composer-wrap">
+        <form id="form">
+          <textarea id="input" rows="1" aria-label="Xabar yozish" placeholder="Xabaringizni shu yerga yozing..." autocomplete="off"></textarea>
+          <button id="sendBtn" type="submit"><span class="send-label">Yuborish</span><span class="send-arrow" aria-hidden="true">↑</span></button>
+        </form>
+        <p class="composer-hint">Enter — yuborish &nbsp; · &nbsp; Shift + Enter — yangi qator</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const chat = document.getElementById("chat");
+    const sendBtn = document.getElementById("sendBtn");
+    const burgerBtn = document.getElementById("burgerBtn");
+    const sidebar = document.getElementById("sidebar");
+    const closeBtn = document.getElementById("closeBtn");
+    const overlay = document.getElementById("overlay");
+    const newChatBtn = document.getElementById("newChatBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    let history = [];
+    let requestInProgress = false;
+
+    function openSidebar() {
+      sidebar.classList.add("open");
+      overlay.classList.add("open");
+      sidebar.setAttribute("aria-hidden", "false");
+      burgerBtn.setAttribute("aria-expanded", "true");
+      closeBtn.focus();
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("open");
+      sidebar.setAttribute("aria-hidden", "true");
+      burgerBtn.setAttribute("aria-expanded", "false");
+    }
+
+    burgerBtn.addEventListener("click", openSidebar);
+    closeBtn.addEventListener("click", closeSidebar);
+    overlay.addEventListener("click", closeSidebar);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeSidebar();
+    });
+
+    function showWelcome(message = "Savolingizni yozing — birgalikda yechim topamiz.") {
+      chat.innerHTML = `
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon">✦</div>
+          <h2>Salom! Qanday yordam beray?</h2>
+          <p></p>
+          <div class="suggestions">
+            <button class="suggestion" type="button" data-prompt="Menga yangi loyiha g‘oyasini taklif qil">💡 Loyiha g‘oyasi</button>
+            <button class="suggestion" type="button" data-prompt="HTML, CSS va JavaScriptni o‘rganish rejasini tuzib ber">💻 Dasturlash</button>
+            <button class="suggestion" type="button" data-prompt="Bugun nimalarni o‘rganishim mumkin?">📚 O‘rganish</button>
+          </div>
+        </div>`;
+      chat.querySelector(".welcome p").textContent = message;
+    }
+
+    function resetChat(message) {
+      if (requestInProgress) return;
+      history = [];
+      showWelcome(message);
+      closeSidebar();
+      input.focus();
+    }
+
+    newChatBtn.addEventListener("click", () => resetChat("Yangi suhbat boshlandi. Savolingizni yozing."));
+    clearBtn.addEventListener("click", () => resetChat("Suhbat tozalandi. Yangi savol berishingiz mumkin."));
+
+    function addMessage(text, type, options = {}) {
+      const welcome = document.getElementById("welcome");
+      if (welcome) welcome.remove();
+
+      const row = document.createElement("div");
+      row.className = "message-row " + (type === "user" ? "user-row" : "assistant-row");
+
+      const label = document.createElement("div");
+      label.className = "message-label";
+      label.textContent = type === "user" ? "Siz" : "Yordamchi AI";
+
+      const message = document.createElement("div");
+      message.className = "message" + (options.loading ? " loading" : "") + (type === "error" ? " error" : "");
+      message.textContent = text;
+      row.append(label, message);
+      chat.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+
+      return { row, message };
+    }
+
+    chat.addEventListener("click", (event) => {
+      const suggestion = event.target.closest("[data-prompt]");
+      if (!suggestion || requestInProgress) return;
+      input.value = suggestion.dataset.prompt;
+      resizeInput();
+      input.focus();
+    });
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text || requestInProgress) return;
+
+      input.value = "";
+      resizeInput();
+      requestInProgress = true;
+      sendBtn.disabled = true;
+      sendBtn.setAttribute("aria-label", "Javob kutilmoqda");
+
+      addMessage(text, "user");
+      history.push({ role: "user", content: text });
+      const loading = addMessage("Javob tayyorlanmoqda", "assistant", { loading: true });
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: history })
+        });
+
+        let data = {};
+        try {
+          data = await response.json();
+        } catch (_) {
+          throw new Error("Serverdan tushunarli javob kelmadi. Server ishlayotganini tekshiring.");
+        }
+
+        loading.row.remove();
+
+        if (!response.ok) {
+          throw new Error(data.error || `Server xatosi (${response.status})`);
+        }
+        if (typeof data.answer !== "string" || !data.answer.trim()) {
+          throw new Error("AI javobi olinmadi. Server javobini tekshiring.");
+        }
+
+        addMessage(data.answer, "assistant");
+        history.push({ role: "assistant", content: data.answer });
+      } catch (error) {
+        loading.row.remove();
+        addMessage("Xatolik: " + (error.message || "Ulanishda muammo yuz berdi."), "error");
+        if (history.length && history[history.length - 1].role === "user") history.pop();
+      } finally {
+        requestInProgress = false;
+        sendBtn.disabled = false;
+        sendBtn.removeAttribute("aria-label");
+        input.focus();
+      }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendMessage();
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function resizeInput() {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 150) + "px";
+    }
+    input.addEventListener("input", resizeInput);
+  </script>
+</body>
+</html>
